@@ -1,0 +1,131 @@
+$regfile = "m8def.dat"
+$crystal = 11059200
+
+$hwstack = 32
+$swstack = 10
+$framesize = 40
+
+'$baud = 38400
+
+
+'Config Timer0 = Timer , Prescale = 1024
+'Enable Interrupts
+''Enable Timer0
+'On Timer0 7seg
+'Start Timer0
+'Timer0 = 204
+
+
+
+
+Config Portb = Output
+Config Portd = Output
+
+$lib "I2C_TWI.LBX"
+
+Config Sda = Portc.4
+Config Scl = Portc.5
+'Config I2cdelay = 100
+
+I2cinit
+Config Twi = 50000
+
+Twcr = &B00000100
+
+Dim Data1 As Byte
+Dim Data2 As Byte
+Dim Data3 As Byte
+
+
+Dim Sel_7seg As Byte
+Dim Dahgan As Byte
+Dim Yekan As Byte
+Dim Temp As Byte
+Dim Var1 As Integer
+Dim Var2 As Integer
+Dim Flag As Byte
+Dim A As Byte
+Dim B As Byte
+Dim Tempword As Word
+Dim Tempsingle As Single
+Const Tempfactor = 0.02
+Dim Td As Byte
+
+Wait 2
+
+'**************tets7seg*****************************************
+
+For A = 0 To 9 Step 1
+Dahgan = A / 10
+Yekan = A Mod 10
+If Yekan >= 0 Then
+   Flag = Yekan
+   Portb.1 = 1 : Portb.0 = 0
+   Portd.0 = Flag.0 : Portd.1 = Flag.1 : Portd.2 = Flag.2 : Portd.3 = Flag.3
+   End If
+Waitms 70
+If Dahgan > 0 Then
+   Flag = Dahgan
+   Portb.1 = 0 : Portb.0 = 1
+   Portd.0 = Flag.0 : Portd.1 = Flag.1 : Portd.2 = Flag.2 : Portd.3 = Flag.3
+   End If
+Waitms 100
+Next
+
+
+
+'*************I2c*****************************************
+Do
+
+I2cstart
+I2cwbyte &HB4
+I2cwbyte &H07
+
+I2cstart
+I2cwbyte &HB5
+
+I2crbyte Data1 , Ack
+I2crbyte Data2 , Ack
+I2crbyte Data3 , Nack
+
+I2cstop
+
+
+Waitms 2
+
+'******************tmp display***************************
+Tempword = Data1
+Shift Tempword , Left , 8
+Tempword = Tempword Or Data2
+Rotate Tempword , Left , 8
+
+
+Tempsingle = Tempword * Tempfactor
+Tempsingle = Tempsingle - 273.15
+Td = Tempsingle
+
+Dahgan = Td / 10
+
+Yekan = Td Mod 10
+
+
+
+
+Waitms 1
+
+
+If Yekan >= 0 Then
+   Flag = Yekan
+   Portb.0 = 0 : Portb.1 = 1
+   Portd.0 = Flag.0 : Portd.1 = Flag.1 : Portd.2 = Flag.2 : Portd.3 = Flag.3
+   End If
+Waitms 10
+If Dahgan > 0 Then
+   Flag = Dahgan
+   Portb.0 = 1 : Portb.1 = 0
+   Portd.0 = Flag.0 : Portd.1 = Flag.1 : Portd.2 = Flag.2 : Portd.3 = Flag.3
+   End If
+Waitms 10
+
+Loop
+End
